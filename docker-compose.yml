@@ -1,0 +1,31 @@
+services:
+  vmanage-proxy:
+    build: .
+    restart: unless-stopped
+    secrets:
+      - vmanage_host
+      - vmanage_user
+      - vmanage_pass
+      - proxy_bearer_token
+    environment:
+      VMANAGE_HOST_FILE: /run/secrets/vmanage_host
+      VMANAGE_USER_FILE: /run/secrets/vmanage_user
+      VMANAGE_PASS_FILE: /run/secrets/vmanage_pass
+      PROXY_BEARER_TOKEN_FILE: /run/secrets/proxy_bearer_token
+    ports:
+      - "127.0.0.1:8080:8080"   # bind to loopback only — not publicly reachable
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+secrets:
+  vmanage_host:
+    file: ./secrets/vmanage_host.txt
+  vmanage_user:
+    file: ./secrets/vmanage_user.txt
+  vmanage_pass:
+    file: ./secrets/vmanage_pass.txt
+  proxy_bearer_token:
+    file: ./secrets/proxy_bearer_token.txt
