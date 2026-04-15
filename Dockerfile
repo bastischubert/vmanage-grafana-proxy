@@ -1,19 +1,16 @@
-FROM python:3.12-slim
-
-# Create a non-root user
-RUN useradd --create-home --shell /bin/bash appuser
-
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
+COPY go.mod .
+COPY main.go .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o proxy .
 
-# Install dependencies first for better layer caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+FROM alpine:3.19
+# CA certificates are needed for TLS connections to vManage
+RUN apk add --no-cache ca-certificates && \
+    adduser -D -H -s /sbin/nologin appuser
 
-COPY proxy.py .
+COPY --from=builder /app/proxy /proxy
 
-# Drop privileges
 USER appuser
-
 EXPOSE 8080
-
-CMD ["uvicorn", "proxy:app", "--host", "0.0.0.0", "--port", "8080", "--no-access-log"]
+ENTRYPOINT ["/proxy"]
