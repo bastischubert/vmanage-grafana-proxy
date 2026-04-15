@@ -16,10 +16,10 @@ This proxy owns those credentials and handles re-authentication transparently wh
 
 ```
 .
-├── proxy.py            # FastAPI proxy application
+├── main.go             # Go proxy application (stdlib only)
+├── go.mod
 ├── Dockerfile
 ├── docker-compose.yml
-├── requirements.txt
 ├── .gitignore
 └── secrets/            # Secret files — never committed to git
     ├── vmanage_host.txt
@@ -75,6 +75,23 @@ statistics/interface
 | `/{path}` | Yes (Bearer) | Proxied vManage API call |
 | `/healthz` | No | Health check for Docker / load balancer |
 
+## Building from source
+
+The binary has no external dependencies, so cross-compilation is trivial:
+
+```bash
+# Linux (amd64 / arm64)
+GOOS=linux GOARCH=amd64 go build -o proxy-linux-amd64 .
+GOOS=linux GOARCH=arm64 go build -o proxy-linux-arm64 .
+
+# macOS
+GOOS=darwin GOARCH=arm64 go build -o proxy-darwin-arm64 .
+GOOS=darwin GOARCH=amd64 go build -o proxy-darwin-amd64 .
+
+# Windows
+GOOS=windows GOARCH=amd64 go build -o proxy.exe .
+```
+
 ## Security notes
 
 - **Credentials never enter Grafana** — only the proxy bearer token is stored there.
@@ -86,4 +103,4 @@ statistics/interface
 
 ## Re-authentication behaviour
 
-On every `401` or `403` response from vManage, the proxy re-authenticates once and retries the original request. An `asyncio.Lock` prevents concurrent re-auth storms under high load.
+On every `401` or `403` response from vManage, the proxy re-authenticates once and retries the original request. A `sync.Mutex` prevents concurrent re-auth storms under high load.
