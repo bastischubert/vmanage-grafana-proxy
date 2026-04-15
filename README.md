@@ -56,7 +56,7 @@ The proxy binds to `127.0.0.1:8080` by default — it is not reachable from outs
 | Base URL | `http://localhost:8080` |
 | Auth type | Bearer Token |
 | Bearer Token | contents of `secrets/proxy_bearer_token.txt` |
-| Allowed hosts | `localhost` |
+| Allowed hosts | `http://localhost:8080/` |
 
 ### 4. Use in a panel
 
@@ -89,7 +89,7 @@ GOOS=darwin GOARCH=arm64 go build -o proxy-darwin-arm64 .
 GOOS=darwin GOARCH=amd64 go build -o proxy-darwin-amd64 .
 
 # Windows
-GOOS=windows GOARCH=amd64 go build -o proxy.exe .
+GOOS=windows GOARCH=amd64 go build -o proxy-windows-amd64.exe .
 ```
 
 ## Security notes
