@@ -136,7 +136,14 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		xsrfToken := sess.xsrfToken
 		sess.mu.Unlock()
 
-		target := vmanageHost + "/dataservice" + r.URL.Path
+		// Strip a leading /dataservice prefix if the caller already included it
+		// (e.g. an AI agent using documented vManage paths), otherwise inject it
+		// so Grafana Infinity panels can omit the prefix entirely.
+		apiPath := r.URL.Path
+		if !strings.HasPrefix(apiPath, "/dataservice") {
+			apiPath = "/dataservice" + apiPath
+		}
+		target := vmanageHost + apiPath
 		if r.URL.RawQuery != "" {
 			target += "?" + r.URL.RawQuery
 		}
