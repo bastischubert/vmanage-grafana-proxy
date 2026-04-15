@@ -14,7 +14,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Config — loaded from Docker secrets (_FILE variants) or plain env vars
+// Config — resolved in order: <NAME>_FILE env var → <NAME> env var → secrets/<name>.txt
 // ---------------------------------------------------------------------------
 
 var (
@@ -25,6 +25,7 @@ var (
 )
 
 func readSecret(name string) (string, error) {
+	// 1. Explicit file path via <NAME>_FILE
 	if fp := os.Getenv(name + "_FILE"); fp != "" {
 		data, err := os.ReadFile(fp)
 		if err != nil {
@@ -32,11 +33,17 @@ func readSecret(name string) (string, error) {
 		}
 		return strings.TrimSpace(string(data)), nil
 	}
-	v := os.Getenv(name)
-	if v == "" {
-		return "", fmt.Errorf("required env var %s (or %s_FILE) is not set", name, name)
+	// 2. Plain environment variable
+	if v := os.Getenv(name); v != "" {
+		return v, nil
 	}
-	return v, nil
+	// 3. Fallback: secrets/<lowercase_name>.txt
+	fp := "secrets/" + strings.ToLower(name) + ".txt"
+	data, err := os.ReadFile(fp)
+	if err == nil {
+		return strings.TrimSpace(string(data)), nil
+	}
+	return "", fmt.Errorf("required config %s not found: set env var %s, %s_FILE, or create %s", name, name, name, fp)
 }
 
 // ---------------------------------------------------------------------------
